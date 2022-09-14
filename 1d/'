@@ -1,0 +1,109 @@
+
+
+def get_config():
+    c = dict({
+        "dt": 0.1,
+        "dx": 0.1,
+        "L": 10,
+        "k_activation": 5,
+        "k_deactivation" : 1,
+        "k_recovery": 1
+       }
+    )
+    return c
+
+def init_state(c, num_cells):
+
+    state = {}
+    
+    state["active"] =     [0 for i in range(0,num_cells)]
+    state["resting"] = [0 for i in range(0, num_cells)]
+    state["ready"] =      [1 for i in range(0, num_cells)]
+
+    return state
+
+
+
+
+def set_ics(c, state):
+    """Start with a spike of activated cells at 0"""
+
+    state["active"][0] = 0.5
+    state["ready"][0] = 0.5
+
+W = [0.25, 0.5, 0.25]
+
+
+from vector_ops import local_average
+
+def derivative(c, state):
+    N = len(state["ready"])
+
+    def zeros(N):
+        return list(0 for i in range(N))
+   
+    dx = {} 
+    for k in state.keys():
+       dx[k] = zeros(N) 
+
+    
+    for i in range(N):
+        
+        A = state["active"]
+        a = A[i-1]*W[0] + A[i]*W[1] + A[i+1 - ((i + 1)//N) * N]*W[2]
+
+        activation = c["k_activation"] * state["ready"][i] * a
+        deactivation = c["k_deactivation"] * state["active"][i]
+        recovery = c["k_recovery"] * state["resting"][i]
+
+        dx["active"][i] =  activation - deactivation
+        dx["resting"][i] = deactivation - recovery
+        dx["ready"][i]   = recovery - activation
+
+    return dx
+ 
+
+c = get_config()
+
+L = c["L"]
+dx = c["dx"]
+
+
+num_cells = round(L/dx)
+dx_actual = 1.0*L/num_cells
+
+
+x = init_state(c, num_cells)
+set_ics(c, x)
+
+xhistory = []
+xhistory.append(x.copy())
+
+from matplotlib import pyplot as plt
+from numpy import log10
+
+keys = ["active", "resting", "ready"]
+fig, axes = plt.subplots(len(keys),1)
+for i in range(len(keys)): axes[i].set_title(keys[i])
+
+num_steps = 10000
+
+for t in range(num_steps):
+    dx = derivative(c, x)
+
+    color_base = 0.5
+    r = log10(t) / log10(num_steps)/ (color_base + 1)
+    color = (r,r,r)
+
+    if t % 1000 == 0:
+        print("Time %i %f"%(t, t*c["dt"]))     
+        for k in keys:
+            axes[keys.index(k)].plot(x[k], label = "%.1f"%(t*c["dt"]), color = color, linewidth=0.4 )
+
+    for k in keys:
+        for j in range(len(x[k])):
+            x[k][j] += c["dt"] * dx[k][j]* c["dt"]
+  
+axes[0].legend() 
+plt.show()
+
