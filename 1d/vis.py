@@ -29,3 +29,50 @@ class Vis():
         self.fig = fig
         self.ax = ax
 
+from collections import namedtuple
+class ScanVis():
+    """Visualizes a Scan"""
+    def __init__(self, scan):
+        make_record = namedtuple("Dimension", ["id", "values", "display_name"])
+        dims = [
+            make_record("kRA", scan.kRA, "aciv"), 
+            make_record("kAS", scan.kAS, "deac"), 
+            make_record("kSR", scan.kSR, "recov")
+        ]
+
+        
+        grid_dims = [len(dims[0].values), len(dims[0].values)]
+        figsize = list(4*i for i in grid_dims)
+        t_max = max(max(r['t']) for r in scan.results)
+        subplot_kw = {"frame_on":False,'xmargin':0, 'ymargin':0, 'yticks': (0,0.5,1.0), 'xticks': (0,t_max)}
+        fig, axes = \
+            p.subplots(*grid_dims, figsize = figsize , sharex = True, sharey = True, subplot_kw = subplot_kw)
+        
+        # set titles 
+        inner_parameter_values_string = ",".join("%g"%n.round(i,2) for i in dims[-1].values)
+
+
+        for row in range(grid_dims[0]):
+            for col in range(grid_dims[1]):
+                title =   "%s %.1f"%(dims[0].display_name, dims[0].values[row])
+                title += " %s %.1f"%(dims[1].display_name, dims[1].values[col])
+
+                axes[row,col].text(0.8,1, title, fontsize=10, fontfamily='serif', )
+
+        
+        fig.suptitle("Activation over time for %s = %s. Brighter lines = higher values."%\
+            (dims[-1].display_name,inner_parameter_values_string),\
+            fontsize=14, fontweight=100
+        )
+        # loop through the results and plot them 
+        for result in scan.results:
+            row = dims[0].values.index(result[dims[0].id])
+            col = dims[1].values.index(result[dims[1].id])
+            label = "%s=%.1f"%(dims[2].id, result[dims[2].id])
+           
+            c =  result[dims[2].id]/max(dims[2].values)
+            c *= 0.8
+            line_color = (c,c,c)
+            axes[row, col].plot(result['t'], result['A'], label = label, color = line_color, linewidth=1)
+        
+        self.axes = axes
