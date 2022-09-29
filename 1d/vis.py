@@ -15,7 +15,7 @@ class Vis():
         fig, ax = p.subplots(2,1, figsize=[5,10])
         ax[0].set_title("Fraction of activated cells over time.")
         ax[0].pcolormesh(T.transpose(),X.transpose(), self.A.transpose()+0.001\
-                , cmap='plasma', norm=mpl.colors.LogNorm(vmin=0.01, vmax=100))
+                , cmap='plasma') # norm=mpl.colors.LogNorm(vmin=0.01, vmax=100))
 
         ax[1].set_title("Activation at 0 and L/2")
         # find the location of the peak 
@@ -41,25 +41,25 @@ class ScanVis():
         ]
 
         
-        grid_dims = [len(dims[0].values), len(dims[0].values)]
+        grid_dims = [len(dims[0].values), len(dims[1].values)]
         figsize = list(4*i for i in grid_dims)
         t_max = max(max(r['t']) for r in scan.results)
         subplot_kw = {"frame_on":False,'xmargin':0, 'ymargin':0, 'yticks': (0,0.5,1.0), 'xticks': (0,t_max)}
         fig, axes = \
             p.subplots(*grid_dims, figsize = figsize , sharex = True, sharey = True, subplot_kw = subplot_kw)
         
-        # set titles 
-        inner_parameter_values_string = ",".join("%g"%n.round(i,2) for i in dims[-1].values)
 
 
         for row in range(grid_dims[0]):
             for col in range(grid_dims[1]):
-                title =   "%s %.1f"%(dims[0].display_name, dims[0].values[row])
-                title += " %s %.1f"%(dims[1].display_name, dims[1].values[col])
+                title =   "%s %.2g"%(dims[0].display_name, dims[0].values[row])
+                title += " %s %.2g"%(dims[1].display_name, dims[1].values[col])
 
                 axes[row,col].text(0.8,1, title, fontsize=10, fontfamily='serif', )
 
         
+        # set titles 
+        inner_parameter_values_string = ",".join("%.2g"%i for i in dims[-1].values)
         fig.suptitle("Activation over time for %s = %s. Brighter lines = higher values."%\
             (dims[-1].display_name,inner_parameter_values_string),\
             fontsize=14, fontweight=100
