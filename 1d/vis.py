@@ -35,9 +35,9 @@ class ScanVis():
     def __init__(self, scan):
         make_record = namedtuple("Dimension", ["id", "values", "display_name"])
         dims = [
-            make_record("kRA", scan.kRA, "aciv"), 
-            make_record("kAS", scan.kAS, "deac"), 
-            make_record("kSR", scan.kSR, "recov")
+            make_record("k_recov", scan.k_recov, "recov"),
+            make_record("k_activ", scan.k_activ, "aciv"),
+            make_record("k_deact", scan.k_deact, "deac"), 
         ]
 
         
@@ -46,7 +46,7 @@ class ScanVis():
         t_max = max(max(r['t']) for r in scan.results)
         subplot_kw = {"frame_on":False,'xmargin':0, 'ymargin':0, 'yticks': (0,0.5,1.0), 'xticks': (0,t_max)}
         fig, axes = \
-            p.subplots(*grid_dims, figsize = figsize , sharex = True, sharey = True, subplot_kw = subplot_kw)
+            p.subplots(*grid_dims, figsize = figsize , sharex = True, sharey = True, subplot_kw = subplot_kw, squeeze=False)
         
 
 

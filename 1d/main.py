@@ -16,29 +16,30 @@ class Scan():
     It outputs a set of histories A(0,t) and A(L/2,t).
     """
     def __init__(self):
-        self.kRA = list(np.logspace(-1,1,5))
-        self.kAS = list(np.logspace(-1,1,5))
-        self.kSR = list(np.logspace(-1,1,5))
+        self.k_activ = list(np.logspace(-1,1,5))
+        self.k_deact = list(np.logspace(-1,1,5))
+        self.k_recov = list(np.logspace(-1,1,5))
 
         self.L = 100
         self.x_sample = 0
         self.results = []
+        self.num_steps = 1000
 
     def go(self):
-        for kRA in self.kRA:
-            for kAS in self.kAS:
-                for kSR in self.kSR: 
-                    sim = Sim(kRA = kRA, kAS = kAS, kSR = kSR, L = 100)
+        for k_activ in self.k_activ:
+            for k_deact in self.k_deact:
+                for k_recov in self.k_recov: 
+                    sim = Sim(k_activ = k_activ, k_deact = k_deact, k_recov = k_recov, L = 100)
                     sim.debug = False
 
-                    sim.run(num_steps = 1000)
+                    sim.run(num_steps = self.num_steps)
                 
                     # find where in x the initial spike in A was
                     A = sim.xhistory
                     self.results.append({
-                        "kRA": kRA, 
-                        "kAS": kAS,
-                        "kSR": kSR,
+                        "k_activ": k_activ, 
+                        "k_deact": k_deact,
+                        "k_recov": k_recov,
                         "x": self.x_sample,
                         "A": [A[t][self.x_sample] for t in range(len(sim.xhistory))],
                         "t": sim.thistory
@@ -49,14 +50,14 @@ class Scan():
             
 class Sim():
 
-    def __init__(self, kRA = 1, kAS = 1, kSR = 1, L = 100):
+    def __init__(self, k_activ = 1, k_deact = 1, k_recov = 1, L = 100):
         """ The user of the class should explicitly set paratemeters after initializing."""
         # domain -- length and time
         self.L  = L  # assume dx = 1 
         # rate constants
-        self.kRA = kRA  # activation:  Inactive -> Active 
-        self.kAS = kAS  # deactivation:  Active -> Spent state
-        self.kSR = kSR  # recovery:   Spent -> ready
+        self.k_activ = k_activ  # activation:  Inactive -> Active 
+        self.k_deact = k_deact  # deactivation:  Active -> Spent state
+        self.k_recov = k_recov  # recovery:   Spent -> ready
 
         self.debug = True # print all logs by default
 
@@ -107,9 +108,9 @@ class Sim():
         recovery = [0]*N
 
         for i in range(N):
-            activation[i] =   self.kRA * self.state["ready"][i] * Ad[i]
-            deactivation[i] = self.kAS * self.state["active"][i]
-            recovery[i] =     self.kSR * self.state["spent"][i]
+            activation[i] =   self.k_activ * self.state["ready"][i] * Ad[i]
+            deactivation[i] = self.k_deact * self.state["active"][i]
+            recovery[i] =     self.k_recov * self.state["spent"][i]
 
          
             dx["active"][i]  = activation[i] - deactivation[i]
