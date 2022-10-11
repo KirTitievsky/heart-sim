@@ -4,9 +4,39 @@ import matplotlib as mpl
 import matplotlib.pyplot as p
 import numpy as n
 
+def simple(sim, logscale=True):
+    """Simple visualiztion that plots A(t,x=L/2) for a single simulation in a 2-d graph."""
+    x = [i[int(sim.L/2)] for i in sim.xhistory]
+    p.plot(sim.thistory, x, label='Active'); 
+    p.legend()
+    if logscale:
+        p.yscale('log')
+    p.ylabel('A(t, L/2)')
+    p.grid(True)
+    p.xlabel('Time kA')
+    p.title('k_act = %g, k_deact = %g, k_recov = %g, L = %g'%(sim.k_activ, sim.k_deact, sim.k_recov, sim.L))
+    p.show()
+   
+def simple_ready(sim, ylim = 1):
+    """Simple visualiztion that plots A(t,x=L/2) for a single simulation in a 2-d graph."""
+    A = [i[int(sim.L/2)] for i in sim.xhistory]
+    S = [i[int(sim.L/2)] for i in sim.shistory]
+    R = [1- A[i] - S[i] for i in range(len(A))]
+
+
+    p.plot(sim.thistory, A, color=(0.1, 0.1, 0.1), label='Active')
+    p.plot(sim.thistory, R, color=(0.1,0.7,0.1), label='Ready')
+    p.legend()
+    p.ylabel('R(t, L/2)')
+    p.grid(True)
+    p.xlabel('Time kA')
+    p.ylim(0, ylim)
+    p.title('k_act = %g, k_deact = %g, k_recov = %g, L = %g'%(sim.k_activ, sim.k_deact, sim.k_recov, sim.L))
+    p.show()
 
 class Vis():
-    def __init__(self, sim):
+    """Produces a full visualization of the active cell field for a simulation."""
+    def __init__(self, sim, lognorm = False):
         xs =  n.linspace(0, sim.L-1, int(sim.L))
         ts = n.linspace(0,sim.t, len(sim.xhistory))
         X, T = n.meshgrid(xs, ts)
@@ -14,8 +44,10 @@ class Vis():
         self.A = n.array([n.array(row) for row in sim.xhistory])
         fig, ax = p.subplots(2,1, figsize=[5,10])
         ax[0].set_title("Fraction of activated cells over time.")
-        ax[0].pcolormesh(T.transpose(),X.transpose(), self.A.transpose()+0.001\
-                , cmap='plasma') # norm=mpl.colors.LogNorm(vmin=0.01, vmax=100))
+        kwargs = {'cmap': 'plasma'}
+        if lognorm:
+            kwargs['norm'] = mpl.colors.LogNorm(vmin=0.01, vmax=100)
+        ax[0].pcolormesh(T.transpose(),X.transpose(), self.A.transpose()+0.001, **kwargs)
 
         ax[1].set_title("Activation at 0 and L/2")
         # find the location of the peak 
@@ -31,7 +63,7 @@ class Vis():
 
 from collections import namedtuple
 class ScanVis():
-    """Visualizes a Scan"""
+    """Visualizes a Scan of simulations."""
     def __init__(self, scan):
         make_record = namedtuple("Dimension", ["id", "values", "display_name"])
         dims = [

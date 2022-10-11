@@ -24,6 +24,8 @@ class Scan():
         self.x_sample = 0
         self.results = []
         self.num_steps = 1000
+        self.period = 0
+
 
     def go(self):
         for k_activ in self.k_activ:
@@ -70,11 +72,23 @@ class Sim():
 
         # save the history of the active concentration here
         self.xhistory = []
-
+        self.shistory = []
         self.thistory = []
 
 
         self.t = 0
+
+
+    def pulse(self, A_peak = 1.0):
+        """Creates an pulse of activated cells at x = L/2. Sets A(t, x=0) = A_peak if A(t,x=0) < A_peak)"""
+        # the initial condition is a spike of active concentration at L/2
+        i = self.L//2
+        A,S,R = [self.state[k][i] for k in ("active", "spent", "ready")]
+
+        if A < A_peak:
+            # we activate only the ready cells
+            self.state["active"][i] = min(A + R, A_peak)
+            self.state["ready"][i] = 1 - S - self.state["active"][i] 
 
     def prepare(self):
 
@@ -82,11 +96,7 @@ class Sim():
             self.state[k] = [0 for i in range(0,self.L)]
         self.state["ready"] = [1 for i in range(0,self.L)]
         
-        # the initial condition is a spike of active concentration at L/2
-        i = self.L//2
-        self.state["active"][i] = 0.5
-        self.state["ready"][i] = 0.5
-
+        self.pulse()
 
 
     def d(self):
@@ -124,7 +134,9 @@ class Sim():
 
         if current_step % self.sampling_period_steps == 0:
             self.xhistory.append(self.state["active"].copy())
+            self.shistory.append(self.state["spent"].copy())
             self.thistory.append(self.t)
+
             if self.debug:
                 print("At step %d"%(current_step) )
 
@@ -134,6 +146,9 @@ class Sim():
         self.log(0)
 
         for t in range(num_steps):
+            if t % int(self.period/dt) == 0:
+                self.pulse()
+
             x = self.state
             dx = self.d()
             self.t += dt
@@ -142,5 +157,8 @@ class Sim():
                     x[k][j] += dx[k][j] * dt 
                     #TODO: control for numerical errors -- sum of all x[k] == 1
 
-            self.log(t+1)
+
+            self.log(t)
+
+
 
